@@ -50,7 +50,7 @@ A **medallion architecture** pipeline that:
 ## Architecture
 ```mermaid
 graph LR
-    A[Raw Data Sources\(S3, Database\)] -->|Extract| B[Snowflake Data Warehouse]
+    A[Raw Data Sources] -->|Extract| B[Snowflake Data Warehouse]
     B -->|dbt Transform| C[Staging Layer]
     C -->|Clean & Standardize| D[Intermediate Layer]
     D -->|Business Logic| E[Marts Layer]
