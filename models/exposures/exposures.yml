@@ -1,0 +1,16 @@
+version: 2
+
+exposures:
+  - name: powerbi_revenue_dashboard
+    type: dashboard
+    owner:
+      name: ""
+      email: ""
+    url: ""
+    description: "Dashboard showing daily revenue and key customer metrics"
+    depends_on:
+      - ref('fct_sales')
+      - ref('dim_customers')
+      - ref('ads_customer_revenue_features')
+      - ref('ads_customer_ltv_scores')
+

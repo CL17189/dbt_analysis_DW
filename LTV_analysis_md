@@ -1,0 +1,116 @@
+# ADS Layer – Customer Lifetime Value (LTV) Analytics
+
+## Overview
+
+The ADS layer produces customer-level LTV metrics for analytical consumption. It enriches marts data into business-ready tables, designed for dashboards, segmentation, and predictive modeling.
+
+The ADS layer depends on marts:
+
+- `fct_sales_incremental` (transaction-level facts)
+- `dim_customers`
+- `dim_products` (indirectly)
+
+Layering: raw → staging → intermediate → marts → ads
+
+---
+
+## LTV Concept
+
+LTV estimates total value a customer brings over time. Key components:
+
+- Revenue contribution
+- Purchase frequency
+- Purchase recency
+- Engagement stability
+- Inter-purchase intervals
+
+Simplified formula:  
+`LTV ≈ Avg Order Value × Purchase Frequency × Customer Lifespan`
+
+ADS layer derives proxies from transactional behavior and cumulative revenue.
+
+---
+
+## ADS Tables
+
+### 1. ads_customer_transaction_history
+
+- Records each transaction per customer
+- Computes `days_since_last_purchase` using previous transaction date
+- Forms behavioral basis for engagement features
+
+### 2. ads_customer_engagement_features
+
+- Aggregates behavioral metrics:
+  - Total purchases
+  - Distinct purchase days
+  - Average and max days between purchases
+- Measures customer stickiness
+
+### 3. ads_customer_revenue_features
+
+- Aggregates revenue metrics:
+  - Cumulative revenue
+  - Avg revenue per order
+  - Max/Min order revenue
+- Measures financial contribution
+
+### 4. ads_customer_ltv_scores
+
+- Combines engagement and revenue tables
+- Produces `predicted_ltv` (rule-based heuristic)
+- Provides single row per customer for dashboards
+
+---
+
+## Feature Engineering Principles
+
+- Separation: engagement and revenue features independent
+- Deterministic transformations
+- Aggregation stability: one row per customer
+- Scalability: cluster tables by `customer_key` to optimize queries
+
+---
+
+## Performance
+
+- Incremental materialization for facts
+- Clustering on `customer_key`
+- Heavy aggregations computed once per run
+- Downstream dashboards read pre-aggregated tables
+
+---
+
+## Data Quality
+
+- Unique `customer_key`
+- Non-null revenue
+- Positive revenue checks
+- Documented in `schema.yml`
+
+---
+
+## Exposure Integration
+
+- Define exposure for LTV dashboards
+- Enables lineage tracking, impact analysis, and governance
+- Shows if upstream models affect downstream analytics
+
+---
+
+## Future Enhancements (TODO)
+
+- Rolling LTV using 30/60/90-day sliding windows  
+- Time decay weighting (e.g., weekly decay factor)  
+- Machine learning LTV prediction (linear regression, survival analysis)
+
+---
+
+## Summary
+
+The ADS LTV layer turns transactional warehouse data into interpretable customer value metrics. It supports:
+
+- Dashboards and analytics
+- Customer segmentation
+- Predictive modeling
+- Scalable and governed architecture

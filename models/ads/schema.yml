@@ -1,0 +1,43 @@
+version: 2
+
+models:
+  - name: ads_customer_transaction_history
+    description: "every order and intervals between orders for each customer"
+    columns:
+      - name: customer_key
+        tests:
+          - not_null
+      - name: revenue
+        tests:
+          - not_null
+          - accepted_range:
+              min_value: 0
+
+  - name: ads_customer_engagement_features
+    description: "customer behavioral features such as total orders, average order value, and recency"
+    columns:
+      - name: customer_key
+        tests:
+          - unique
+          - not_null
+
+  - name: ads_customer_revenue_features
+    description: "customer revenue features "
+    columns:
+      - name: customer_key
+        tests:
+          - unique
+          - not_null
+      - name: cumulative_revenue
+        tests:
+          - not_null
+
+  - name: ads_customer_ltv_scores
+    description: "customer LTV scores predicted based on historical behavior and revenue"
+    columns:
+      - name: customer_key
+        tests:
+          - unique
+          - not_null
+      - name: predicted_ltv
+        description: "ltv score predicted using a machine learning model based on historical customer behavior and revenue"

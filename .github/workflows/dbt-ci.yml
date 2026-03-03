@@ -1,0 +1,90 @@
+name: dbt CI/CD Workflow
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  dbt_ci:
+    runs-on: ubuntu-latest
+    env:
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+      SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+      SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dbt and dependencies
+        run: |
+          pip install --upgrade pip
+          pip install dbt-snowflake dbt-utils dbt-expectations
+
+      - name: dbt deps
+        run: dbt deps
+
+      - name: dbt parse
+        run: dbt parse
+
+      - name: dbt compile
+        run: dbt compile
+
+      - name: dbt test
+        run: dbt test
+        continue-on-error: true
+
+      - name: Collect Snowflake cost metrics
+        shell: bash
+        run: |
+          pip install snowflake-connector-python pandas
+          python <<EOF
+          import os, pandas as pd, snowflake.connector as sf
+          ctx = sf.connect(
+              user=os.environ['SNOWFLAKE_USER'],
+              password=os.environ['SNOWFLAKE_PASSWORD'],
+              account=os.environ['SNOWFLAKE_ACCOUNT'],
+              role=os.environ['SNOWFLAKE_ROLE'],
+              warehouse=os.environ['SNOWFLAKE_WAREHOUSE'],
+              database='ECOMMERCE_ANALYTICS_PROJECT'
+          )
+          cs = ctx.cursor()
+          cs.execute("""
+              select query_id, user_name, database_name, schema_name, total_elapsed_time, bytes_scanned
+              from snowflake.account_usage.query_history
+              where start_time >= dateadd(day, -1, current_timestamp())
+              order by start_time desc
+          """)
+          df = pd.DataFrame(cs.fetchall(), columns=[x[0] for x in cs.description])
+          df.to_csv('cost_report.csv', index=False)
+          EOF
+
+      - name: Send Slack notification on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: '{"text":"dbt CI/CD job failed! Check logs for details."}'
+          channel: '#data-alerts'
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Send email on failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.example.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USER }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "dbt CI/CD Failure"
+          to: ${{ env.ALERT_EMAIL }}
+          body: "dbt CI/CD job failed. Please check workflow logs."

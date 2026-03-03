@@ -1,0 +1,32 @@
+version: 2
+
+contracts:
+  - name: fct_sales_contract
+    model: ref('fct_sales')
+    interface:
+      columns:
+        - name: ticket_number
+          type: integer
+          nullable: false
+        - name: customer_key
+          type: integer
+          nullable: false
+        - name: revenue
+          type: numeric
+          nullable: false
+  - name: ads_customer_ltv_contract
+    model: ref('ads_customer_ltv_scores')
+    interface:
+      columns:
+        - name: customer_key
+          type: integer
+          nullable: false
+        - name: category
+          type: string
+          nullable: false
+        - name: predicted_ltv
+          type: numeric
+          nullable: false
+        - name: lifetime_orders
+          type: integer
+          nullable: false

@@ -1,0 +1,18 @@
+version: 2
+
+sources:
+  - name: tpcds
+    database: ECOMMERCE_RAW
+    schema: TPCDS_SF10TCL
+    tables:
+      - name: customer
+        description: "Customer master data"
+      
+      - name: store_sales
+        description: "Store sales transactions"
+      
+      - name: item
+        description: "Product/Item catalog"
+      
+      - name: date_dim
+        description: "Date dimension"

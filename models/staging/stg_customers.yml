@@ -1,0 +1,11 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: "Cleaned and standardized customer data"
+    columns:
+      - name: customer_key
+        description: "Primary key for customers"
+        tests:
+          - unique
+          - not_null

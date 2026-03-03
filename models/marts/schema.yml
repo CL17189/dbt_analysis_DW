@@ -1,0 +1,35 @@
+version: 2
+
+models:
+  - name: fct_sales
+    description: "Sales fact table with all transactions"
+    columns:
+      - name: ticket_number
+        tests:
+          - not_null
+          - unique
+      - name: customer_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_key
+      - name: revenue
+        description: "Revenue calculated as extended_sales_price - discount_amount"
+        tests:
+          - not_null
+          - expression_is_true:
+              expression: "revenue >= 0"
+
+        
+  - name: dim_customers
+    description: "Customer dimension with lifetime metrics"
+    columns:
+      - name: customer_key
+        description: "Primary key"
+        tests:
+          - unique
+          - not_null
+      - name: total_revenue
+        tests:
+          - not_null
